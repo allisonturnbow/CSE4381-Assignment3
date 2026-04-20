@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Extract a Hidden Message</h1>
+<p class="subtitle">Upload a stego file and provide the same S and L parameters used during embedding.</p>
+
+<div class="card">
+  <form method="POST" enctype="multipart/form-data">
+    <div class="form-group">
+      <label>STEGO FILE</label>
+      <input type="file" name="stego" required>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>S — START BIT</label>
+        <input type="number" name="S" value="0" min="0">
+      </div>
+      <div class="form-group">
+        <label>L — PERIODICITY</label>
+        <input type="text" name="L" value="8">
+        <p class="hint">Must match what was used to embed.</p>
+      </div>
+    </div>
+    <button type="submit" class="btn">Extract</button>
+  </form>
+</div>
+
+{% if extracted is not none %}
+<div class="card">
+  <h2>Extracted Message</h2>
+  <pre>{{ extracted }}</pre>
+</div>
+{% endif %}
+{% endblock %}

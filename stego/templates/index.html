@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="section-header">
+  <div>
+    <h1>Public Posts</h1>
+    <p class="subtitle">Files with hidden messages — anyone can view, only authenticated users may post.</p>
+  </div>
+  {% if user %}
+    <a href="/embed" class="btn">+ New Post</a>
+  {% else %}
+    <a href="/login" class="btn btn-outline">Login to Post</a>
+  {% endif %}
+</div>
+
+{% if posts %}
+  <div>
+    {% for post in posts|reverse %}
+    <div class="card post-card">
+      <div class="post-meta">
+        <strong style="color:var(--accent)">{{ post.uploader }}</strong>
+        &nbsp;·&nbsp;
+        <span class="tag">{{ post.original_name }}</span>
+        <span class="tag">S={{ post.params.S }}</span>
+        <span class="tag">L={{ post.params.L }}</span>
+        {% if post.is_image %}<span class="tag" style="color:var(--accent2)">image</span>{% endif %}
+      </div>
+      {% if post.caption %}
+        <p class="post-caption">{{ post.caption }}</p>
+      {% endif %}
+      {% if post.is_image %}
+        <img src="/static/uploads/{{ post.filename }}" alt="stego image">
+      {% endif %}
+      <a href="/download/{{ post.id }}" class="btn btn-outline" style="font-size:0.8rem;padding:0.4rem 1rem;">
+        ↓ Download
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty">No posts yet. Log in to embed a secret message!</div>
+{% endif %}
+{% endblock %}

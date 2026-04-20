@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Embed a Hidden Message</h1>
+<p class="subtitle">Upload a carrier file and a secret message. The result will be posted publicly.</p>
+
+<div class="card">
+  <form method="POST" enctype="multipart/form-data">
+
+    <div class="form-group">
+      <label>CARRIER FILE (P) — the file that hides your message</label>
+      <input type="file" name="carrier" required>
+      <p class="hint">Any format: JPG, PNG, MP4, WAV, PDF, TXT, etc.</p>
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-group">
+      <label>SECRET MESSAGE — upload a file</label>
+      <input type="file" name="message_file">
+    </div>
+    <div class="form-group">
+      <label>— OR — type a text message</label>
+      <textarea name="message_text" rows="3" placeholder="Your secret text here…"></textarea>
+    </div>
+
+    <hr class="divider">
+
+    <div class="grid-2">
+      <div class="form-group">
+        <label>S — START BIT (skip first S bits of carrier)</label>
+        <input type="number" name="S" value="0" min="0">
+        <p class="hint">Use this to skip file headers (e.g. 64 for some JPGs).</p>
+      </div>
+      <div class="form-group">
+        <label>L — PERIODICITY (replace every L-th bit)</label>
+        <input type="text" name="L" value="8">
+        <p class="hint">Single int (e.g. <code>8</code>) or cycling list (e.g. <code>8,16,28</code>).</p>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>CAPTION (public, optional)</label>
+      <input type="text" name="caption" placeholder="What's this file about?">
+    </div>
+
+    <button type="submit" class="btn">Embed &amp; Post</button>
+  </form>
+</div>
+
+<div class="card" style="background:#0a0a0f;">
+  <h2>How it works</h2>
+  <p style="font-size:0.82rem;line-height:1.7;color:var(--muted)">
+    The carrier bits are indexed from 0.
+    The first <strong style="color:var(--text)">S</strong> bits are left untouched (to protect file format headers).
+    Then, starting at bit <em>S</em>, every <strong style="color:var(--text)">L</strong>-th bit is overwritten with
+    the next bit from your message (with a 32-bit length header prepended automatically).
+    If L is a list, it cycles: <code>8, 16, 28, 8, 16, 28, …</code>
+    The recipient uses the same S and L to extract the message.
+  </p>
+</div>
+{% endblock %}
