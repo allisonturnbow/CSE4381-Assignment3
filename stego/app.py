@@ -10,8 +10,14 @@ import os
 import io
 import math
 from flask import (
-    Flask, render_template, request, redirect, url_for,
-    session, send_file, flash
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    session,
+    send_file,
+    flash,
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -23,18 +29,18 @@ UPLOAD_FOLDER = "static/uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # ── Simple in-memory user store (replace with a DB in production) ──────────
-USERS = {
-    "alice": generate_password_hash("password123"),
-    "bob":   generate_password_hash("securepass"),
-}
+USERS = {"aturnbow": generate_password_hash("password123")}
 
 # ── In-memory post store ───────────────────────────────────────────────────
-POSTS = []   # list of dicts: {id, filename, original_name, is_image, uploader, caption, params}
+POSTS = (
+    []
+)  # list of dicts: {id, filename, original_name, is_image, uploader, caption, params}
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  STEGANOGRAPHY CORE
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 def bytes_to_bits(data: bytes) -> list[int]:
     """Convert bytes → list of individual bits (MSB first)."""
@@ -72,7 +78,9 @@ def get_period_sequence(L: int | list[int], count: int) -> list[int]:
     return seq
 
 
-def embed(carrier: bytes, message: bytes, S: int, L_raw, prepend_length: bool = True) -> bytes:
+def embed(
+    carrier: bytes, message: bytes, S: int, L_raw, prepend_length: bool = True
+) -> bytes:
     """
     Hide `message` inside `carrier`.
 
@@ -175,6 +183,7 @@ def parse_L(raw: str):
 #  AUTH ROUTES
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -200,6 +209,7 @@ def logout():
 #  MAIN / PUBLIC ROUTES
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 @app.route("/")
 def index():
     return render_template("index.html", posts=POSTS, user=session.get("user"))
@@ -208,6 +218,7 @@ def index():
 # ══════════════════════════════════════════════════════════════════════════════
 #  AUTHENTICATED: EMBED
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 @app.route("/embed", methods=["GET", "POST"])
 def embed_route():
@@ -260,15 +271,17 @@ def embed_route():
 
         L_display = L_raw  # keep original string for display
 
-        POSTS.append({
-            "id": len(POSTS),
-            "filename": stego_filename,
-            "original_name": orig_name,
-            "is_image": is_image,
-            "uploader": session["user"],
-            "caption": caption,
-            "params": {"S": S, "L": L_display},
-        })
+        POSTS.append(
+            {
+                "id": len(POSTS),
+                "filename": stego_filename,
+                "original_name": orig_name,
+                "is_image": is_image,
+                "uploader": session["user"],
+                "caption": caption,
+                "params": {"S": S, "L": L_display},
+            }
+        )
 
         flash(f"File posted successfully with hidden message!", "success")
         return redirect(url_for("index"))
@@ -279,6 +292,7 @@ def embed_route():
 # ══════════════════════════════════════════════════════════════════════════════
 #  AUTHENTICATED: EXTRACT
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 @app.route("/extract", methods=["GET", "POST"])
 def extract_route():
@@ -310,12 +324,15 @@ def extract_route():
         except Exception as e:
             flash(f"Extraction failed: {e}", "error")
 
-    return render_template("extract.html", user=session.get("user"), extracted=extracted)
+    return render_template(
+        "extract.html", user=session.get("user"), extracted=extracted
+    )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  DOWNLOAD stego file (public)
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 @app.route("/download/<int:post_id>")
 def download(post_id):
