@@ -340,7 +340,7 @@ def download(post_id):
     if not post:
         flash("Post not found.", "error")
         return redirect(url_for("index"))
-    path = os.path.join(UPLOAD_FOLDER, post["filename"])
+    path = os.path.abspath(os.path.join(UPLOAD_FOLDER, post["filename"]))
     return send_file(path, as_attachment=True, download_name=post["original_name"])
 
 
