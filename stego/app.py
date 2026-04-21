@@ -1,6 +1,6 @@
 """
 Steganography Web Service
-CSE 5381/4381 - Information Security II
+CSE 4381 - Information Security II
 References:
   - http://graphics.stanford.edu/~seander/bithacks.html
   - https://github.com/scott-griffiths/bitstring
@@ -25,10 +25,12 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__)
 app.secret_key = "stego_secret_key_change_in_production"
 
-UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "uploads")
+UPLOAD_FOLDER = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "static", "uploads"
+)
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# ── Simple in-memory user store (replace with a DB in production) ──────────
+# ── Simple in-memory user store ──────────
 USERS = {"aturnbow": generate_password_hash("password123")}
 
 # ── In-memory post store ───────────────────────────────────────────────────
@@ -37,9 +39,7 @@ POSTS = (
 )  # list of dicts: {id, filename, original_name, is_image, uploader, caption, params}
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-#  STEGANOGRAPHY CORE
-# ══════════════════════════════════════════════════════════════════════════════
+#  STEGANOGRAPHY algorithm
 
 
 def bytes_to_bits(data: bytes) -> list[int]:
@@ -143,7 +143,7 @@ def extract(stego: bytes, S: int, L_raw) -> bytes:
     idx = S
     period_iter_pos = 0  # tracks position in cycling L sequence
 
-    # We need an iterator-style approach so we can resume after reading header
+    # iterator-style approach so we can resume after reading header
     def next_period(pos):
         if isinstance(L_raw, int):
             return L_raw, pos
@@ -179,9 +179,7 @@ def parse_L(raw: str):
     return [int(p) for p in parts]
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 #  AUTH ROUTES
-# ══════════════════════════════════════════════════════════════════════════════
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -205,9 +203,7 @@ def logout():
     return redirect(url_for("index"))
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 #  MAIN / PUBLIC ROUTES
-# ══════════════════════════════════════════════════════════════════════════════
 
 
 @app.route("/")
@@ -215,9 +211,7 @@ def index():
     return render_template("index.html", posts=POSTS, user=session.get("user"))
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 #  AUTHENTICATED: EMBED
-# ══════════════════════════════════════════════════════════════════════════════
 
 
 @app.route("/embed", methods=["GET", "POST"])
@@ -289,9 +283,7 @@ def embed_route():
     return render_template("embed.html", user=session.get("user"))
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 #  AUTHENTICATED: EXTRACT
-# ══════════════════════════════════════════════════════════════════════════════
 
 
 @app.route("/extract", methods=["GET", "POST"])
@@ -329,9 +321,7 @@ def extract_route():
     )
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 #  DOWNLOAD stego file (public)
-# ══════════════════════════════════════════════════════════════════════════════
 
 
 @app.route("/download/<int:post_id>")
