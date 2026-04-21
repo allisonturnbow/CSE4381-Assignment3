@@ -25,7 +25,7 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__)
 app.secret_key = "stego_secret_key_change_in_production"
 
-UPLOAD_FOLDER = "static/uploads"
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # ── Simple in-memory user store (replace with a DB in production) ──────────
@@ -340,7 +340,7 @@ def download(post_id):
     if not post:
         flash("Post not found.", "error")
         return redirect(url_for("index"))
-    path = os.path.abspath(os.path.join(UPLOAD_FOLDER, post["filename"]))
+    path = os.path.join(UPLOAD_FOLDER, post["filename"])
     return send_file(path, as_attachment=True, download_name=post["original_name"])
 
 
