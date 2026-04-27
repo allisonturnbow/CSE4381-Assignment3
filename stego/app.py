@@ -9,6 +9,7 @@ References:
 import os
 import io
 import math
+from PIL import Image
 from flask import (
     Flask,
     render_template,
@@ -24,6 +25,7 @@ from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = "stego_secret_key_change_in_production"
+app.config["MAX_CONTENT_LENGTH"] = None  # no upload size limit
 
 UPLOAD_FOLDER = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "static", "uploads"
@@ -167,6 +169,27 @@ def extract(stego: bytes, S: int, L_raw) -> bytes:
     return bits_to_bytes(msg_bits)[:msg_len]
 
 
+IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"}
+
+
+def embed_image_stego(carrier_bytes: bytes, message: bytes, S: int, L_raw) -> bytes:
+    """Embed message in image pixel data so the output remains a valid PNG."""
+    img = Image.open(io.BytesIO(carrier_bytes)).convert("RGB")
+    pixel_bytes = bytes(img.tobytes())
+    stego_pixel_bytes = embed(pixel_bytes, message, S, L_raw)
+    stego_img = Image.frombytes("RGB", img.size, stego_pixel_bytes)
+    out = io.BytesIO()
+    stego_img.save(out, format="PNG")
+    return out.getvalue()
+
+
+def extract_image_stego(stego_bytes: bytes, S: int, L_raw) -> bytes:
+    """Extract message from image pixel data."""
+    img = Image.open(io.BytesIO(stego_bytes)).convert("RGB")
+    pixel_bytes = bytes(img.tobytes())
+    return extract(pixel_bytes, S, L_raw)
+
+
 def parse_L(raw: str):
     """
     Parse user-supplied L value.
@@ -235,6 +258,9 @@ def embed_route():
             return redirect(url_for("embed_route"))
 
         carrier_bytes = carrier_file.read()
+        orig_name = secure_filename(carrier_file.filename)
+        ext = os.path.splitext(orig_name)[1].lower()
+        is_image = ext in IMAGE_EXTS
 
         # Message: prefer uploaded file, fall back to text
         if message_file and message_file.filename:
@@ -246,22 +272,21 @@ def embed_route():
             return redirect(url_for("embed_route"))
 
         try:
-            stego_bytes = embed(carrier_bytes, msg_bytes, S, L)
+            if is_image:
+                # Work on pixel data so the output remains a valid image
+                stego_bytes = embed_image_stego(carrier_bytes, msg_bytes, S, L)
+                orig_name = os.path.splitext(orig_name)[0] + ".png"
+            else:
+                stego_bytes = embed(carrier_bytes, msg_bytes, S, L)
         except ValueError as e:
             flash(str(e), "error")
             return redirect(url_for("embed_route"))
 
         # Save stego file
-        orig_name = secure_filename(carrier_file.filename)
         stego_filename = f"stego_{len(POSTS)}_{orig_name}"
         stego_path = os.path.join(UPLOAD_FOLDER, stego_filename)
         with open(stego_path, "wb") as f:
             f.write(stego_bytes)
-
-        # Detect if the carrier is an image (by extension, simple approach)
-        image_exts = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"}
-        ext = os.path.splitext(orig_name)[1].lower()
-        is_image = ext in image_exts
 
         L_display = L_raw  # keep original string for display
 
@@ -305,9 +330,13 @@ def extract_route():
             return redirect(url_for("extract_route"))
 
         stego_bytes = stego_file.read()
+        stego_ext = os.path.splitext(secure_filename(stego_file.filename))[1].lower()
 
         try:
-            msg_bytes = extract(stego_bytes, S, L)
+            if stego_ext in IMAGE_EXTS:
+                msg_bytes = extract_image_stego(stego_bytes, S, L)
+            else:
+                msg_bytes = extract(stego_bytes, S, L)
             # Try to decode as text; fall back to hex dump
             try:
                 extracted = msg_bytes.decode("utf-8")
