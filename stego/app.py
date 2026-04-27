@@ -115,13 +115,23 @@ def embed(
             return L_raw, pos
         return L_raw[pos % len(L_raw)], pos + 1
 
+    # Pre-calculate the last index we'll need so we can give a clear error upfront
+    _idx, _pp = S, 0
+    for i in range(num_payload_bits):
+        _p, _pp = _next_p(_pp)
+        if i < num_payload_bits - 1:
+            _idx += _p
+    required_bits = _idx + 1
+    if required_bits > len(carrier_bits):
+        raise ValueError(
+            f"Carrier too small: embedding {num_payload_bits} bits requires at least "
+            f"{required_bits} carrier bits, but the carrier only has {len(carrier_bits)} bits "
+            f"({len(carrier_bits) // 8} bytes)."
+        )
+
     idx = S
     period_pos = 0
     for payload_bit in payload_bits:
-        if idx >= len(carrier_bits):
-            raise ValueError(
-                f"Carrier too small: need at least {idx} bits, have {len(carrier_bits)}"
-            )
         carrier_bits[idx] = payload_bit
         p, period_pos = _next_p(period_pos)
         idx += p
